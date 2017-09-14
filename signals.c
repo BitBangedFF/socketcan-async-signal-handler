@@ -21,13 +21,13 @@ static const char done_msg[] = "|";
 static const char data_msg[] = "+";
 static const char nodata_msg[] = "_";
 
-static void terminate_handler(int sig)
+static void sigint_handler(int sig)
 {
     (void) sig;
     exit_signal = 1;
 }
 
-static void io_handler(int sig)
+static void sigio_handler(int sig)
 {
     (void) sig;
     struct can_frame rx_frame;
@@ -75,7 +75,7 @@ static void register_sigint(void)
 
     memset(&act, 0, sizeof(act));
     act.sa_flags = SA_RESTART;
-    act.sa_handler = terminate_handler;
+    act.sa_handler = sigint_handler;
 
     printf("registering SIGINT signal\n");
 
@@ -94,7 +94,7 @@ static void register_sigio(void)
 
     memset(&act, 0, sizeof(act));
     act.sa_flags = SA_RESTART;
-    act.sa_handler = io_handler;
+    act.sa_handler = sigio_handler;
 
     printf("registering SIGIO signal\n");
 
