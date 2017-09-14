@@ -136,7 +136,7 @@ static void unblock_sigio(
     }
 }
 
-static void create_can_socket(void)
+static void open_can_socket(void)
 {
     struct ifreq ifr;
     struct sockaddr_can can_address;
@@ -186,6 +186,15 @@ static void create_can_socket(void)
     printf("\n");
 }
 
+static void close_can_socket(void)
+{
+    if(socket_fd >= 0)
+    {
+        close(socket_fd);
+        socket_fd = -1;
+    }
+}
+
 static void example(void)
 {
     sigset_t mask;
@@ -198,7 +207,7 @@ static void example(void)
 
     sigint_wait();
 
-    create_can_socket();
+    open_can_socket();
 
     register_sigio();
 
@@ -214,11 +223,7 @@ static void example(void)
 
     sigint_wait();
 
-    if(socket_fd >= 0)
-    {
-        close(socket_fd);
-        socket_fd = -1;
-    }
+    close_can_socket();
 }
 
 int main (int argc, char *argv[])
