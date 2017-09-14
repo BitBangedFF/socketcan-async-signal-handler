@@ -1,0 +1,4 @@
+#!/bin/bash
+
+sudo /usr/local/polysync/bin/polysync-core-socketcan-util -b 500000 -s can0
+sudo /usr/local/polysync/bin/polysync-core-socketcan-util -b 500000 -s can1
