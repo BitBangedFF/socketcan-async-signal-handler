@@ -134,8 +134,6 @@ static void unblock_sigio(
         perror("sigprocmask(SIG_SETMASK)");
         exit(1);
     }
-
-    printf("\n");
 }
 
 static void create_can_socket(void)
@@ -188,30 +186,13 @@ static void create_can_socket(void)
     printf("\n");
 }
 
-int main (int argc, char *argv[])
+static void example(void)
 {
-    (void) argc;
-    (void) argv;
-
     sigset_t mask;
     sigset_t orig_mask;
 
     sigemptyset(&mask);
     sigemptyset(&orig_mask);
-
-    const pid_t pid = getpid();
-
-    printf("\n");
-    printf("use CTRL-C (SIGINT) to continue when waiting\n");
-    printf("\n");
-    printf("process ID: %d\n", (int) pid);
-    printf("to trace the signals run 'sudo strace -e trace=signal -p %d'\n", (int) pid);
-    printf("\n");
-    printf("data characters:\n");
-    printf("'%c' - CAN data was read\n", data_msg[0]);
-    printf("'%c' - CAN data was not available\n", nodata_msg[0]);
-    printf("'%c' - end of signal handler\n", done_msg[0]);
-    printf("\n");
 
     register_sigint();
 
@@ -233,12 +214,37 @@ int main (int argc, char *argv[])
 
     sigint_wait();
 
-    printf("done\n");
-
     if(socket_fd >= 0)
     {
         close(socket_fd);
+        socket_fd = -1;
     }
+}
+
+int main (int argc, char *argv[])
+{
+    (void) argc;
+    (void) argv;
+
+    const pid_t pid = getpid();
+
+    printf("\n");
+    printf("use CTRL-C (SIGINT) to continue when waiting\n");
+    printf("\n");
+    printf("process ID: %d\n", (int) pid);
+    printf("to trace the signals run 'sudo strace -e trace=signal -p %d'\n", (int) pid);
+    printf("\n");
+    printf("data characters:\n");
+    printf("'%c' - CAN data was read\n", data_msg[0]);
+    printf("'%c' - CAN data was not available\n", nodata_msg[0]);
+    printf("'%c' - end of signal handler\n", done_msg[0]);
+    printf("\n");
+
+    example();
+
+    printf("done\n");
+
+    (void) fflush(stdout);
 
     return 0;
 }
