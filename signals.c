@@ -23,11 +23,13 @@ static const char nodata_msg[] = "_";
 
 static void terminate_handler(int sig)
 {
+    (void) sig;
     exit_signal = 1;
 }
 
 static void io_handler(int sig)
 {
+    (void) sig;
     struct can_frame rx_frame;
 
     if(socket_fd >= 0)
@@ -64,7 +66,7 @@ static void sigint_wait(void)
 
     exit_signal = 0;
 
-    printf("\n");
+    printf("\n\n");
 }
 
 static void register_sigint(void)
@@ -82,6 +84,8 @@ static void register_sigint(void)
         perror("sigaction(SIGINT)");
         exit(1);
     }
+
+    printf("\n");
 }
 
 static void register_sigio(void)
@@ -99,6 +103,8 @@ static void register_sigio(void)
         perror("sigaction(SIGIO)");
         exit(1);
     }
+
+    printf("\n");
 }
 
 static void block_sigio(
@@ -114,6 +120,8 @@ static void block_sigio(
         perror("sigprocmask(SIG_BLOCK)");
         exit(1);
     }
+
+    printf("\n");
 }
 
 static void unblock_sigio(
@@ -126,17 +134,68 @@ static void unblock_sigio(
         perror("sigprocmask(SIG_SETMASK)");
         exit(1);
     }
+
+    printf("\n");
 }
 
-int main (int argc, char *argv[])
+static void create_can_socket(void)
 {
-    sigset_t mask;
-    sigset_t orig_mask;
     struct ifreq ifr;
     struct sockaddr_can can_address;
 
     memset(&ifr, 0, sizeof(ifr));
     memset(&can_address, 0, sizeof(can_address));
+
+    printf("creating CAN socket\n");
+
+    socket_fd = socket(PF_CAN, SOCK_RAW, CAN_RAW);
+
+    if(socket_fd < 0)
+    {
+        perror("socket");
+        exit(1);
+    }
+
+    strncpy(ifr.ifr_name, CAN_IF, IFNAMSIZ);
+
+    if(ioctl(socket_fd, SIOCGIFINDEX, &ifr) < 0)
+    {
+        perror("ifindex on can");
+        exit(1);
+    }
+
+    can_address.can_family = AF_CAN;
+    can_address.can_ifindex = ifr.ifr_ifindex;
+
+    if(bind(socket_fd, (struct sockaddr*) &can_address, sizeof(can_address)) < 0)
+    {
+        perror("bind");
+        exit(1);
+    }
+
+    if(fcntl(socket_fd, F_SETOWN, getpid()) < 0)
+    {
+        perror("fcntl F_SETOWN");
+        exit(1);
+    }
+
+    if(fcntl(socket_fd, F_SETFL, FASYNC | O_NONBLOCK) < 0)
+    {
+        perror("fcntl F_SETFL");
+        exit(1);
+    }
+
+    printf("\n");
+}
+
+int main (int argc, char *argv[])
+{
+    (void) argc;
+    (void) argv;
+
+    sigset_t mask;
+    sigset_t orig_mask;
+
     sigemptyset(&mask);
     sigemptyset(&orig_mask);
 
@@ -158,42 +217,7 @@ int main (int argc, char *argv[])
 
     sigint_wait();
 
-    socket_fd = socket(PF_CAN, SOCK_RAW, CAN_RAW);
-
-    if(socket_fd < 0)
-    {
-        perror("socket");
-        return 1;
-    }
-
-    strncpy(ifr.ifr_name, CAN_IF, IFNAMSIZ);
-
-    if(ioctl(socket_fd, SIOCGIFINDEX, &ifr) < 0)
-    {
-        perror("ifindex on can");
-        return 1;
-    }
-
-    can_address.can_family = AF_CAN;
-    can_address.can_ifindex = ifr.ifr_ifindex;
-
-    if(bind(socket_fd, (struct sockaddr*) &can_address, sizeof(can_address)) < 0)
-    {
-        perror("bind");
-        return 1;
-    }
-
-    if(fcntl(socket_fd, F_SETOWN, pid) < 0)
-    {
-        perror("fcntl F_SETOWN");
-        return 1;
-    }
-
-    if(fcntl(socket_fd, F_SETFL, FASYNC | O_NONBLOCK) < 0)
-    {
-        perror("fcntl F_SETFL");
-        return 1;
-    }
+    create_can_socket();
 
     register_sigio();
 

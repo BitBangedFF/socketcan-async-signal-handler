@@ -1,4 +1,4 @@
 #!/bin/bash
 
-rm -f a.oum-f a.out
-gcc -std=gnu99 -Wall -Wextra signals.c
+rm -f signals.bin
+gcc -std=gnu99 -Wall -Wextra signals.c -o signals.bin
